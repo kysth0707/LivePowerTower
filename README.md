@@ -1,7 +1,7 @@
 https://github.com/DMTPARK/mytetration
 # 라이브 파워 타워 ( Live Power Tower )
 - 실시간으로 빠르게 파워타워 함수를 탐색하자
-
+- 필요 라이브러리 및 테스트 버젼은 requirements.txt에 있습니다
 - 예시 동영상 : https://www.youtube.com/watch?v=FdvU-dsv4O0
 - 빠른 탐색을 통해 찾은 하트
 ![image](https://github.com/kysth0707/LivePowerTower/assets/83905675/34d75cf1-a793-411e-89e9-83424edf0238)
