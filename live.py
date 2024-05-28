@@ -47,7 +47,8 @@ def getResetedDraw(n, mapY, offset, chunk):
 				for y in range(cnt)
 			}
 		},
-			2*offset/(n/chunk)
+			2*offset/(n/chunk),
+			np.zeros((n, n), dtype=bool)
 		)
 
 # 화면 리셋
@@ -63,14 +64,14 @@ chunk = 16
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 YELLOW = (255, 255, 0)
+GRAY = (127, 127, 127)
 
 DRAW_OFFSET = 20
 DRAW_COUNT_BY_A_FRAME = 5
+myFont = pygame.font.SysFont("malgungothic", 15)
+lastTime = time.time()
 
-
-
-isDrawn, oneChunckLen = getResetedDraw(n, mapY, mapShowOffset, chunk)
-mapImage = np.zeros((n, n), dtype=bool)
+isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
 # print(mapImage)
 
 # 그리기 변수
@@ -103,8 +104,7 @@ while run:
 		
 
 	# 화면 그리기
-	screen.fill((127, 127, 127))
-	pygame.draw.rect(screen, BLACK, [DRAW_OFFSET, DRAW_OFFSET, SCREEN_WIDTH - 2*DRAW_OFFSET, SCREEN_HEIGHT - 2*DRAW_OFFSET])
+	screen.fill((0, 0, 0))
 
 	# 맵 그리기
 	# convert = mapImage.astype('int') * 256
@@ -112,7 +112,18 @@ while run:
 	tmp = Image.fromarray(np.rot90(mapImage.astype('int') * 255, 3)).resize((SCREEN_WIDTH - 2*DRAW_OFFSET, SCREEN_HEIGHT - 2*DRAW_OFFSET), resample=Image.Resampling.NEAREST)
 	frame = pygame.surfarray.make_surface(np.array(tmp))
 
-	screen.blit(frame, (DRAW_OFFSET, DRAW_OFFSET))
+	if moveDragging:
+		# mapY -= 2*mapShowOffset*(pygame.mouse.get_pos()[0] - boxStartPos[0]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
+		# mapX += 2*mapShowOffset*(pygame.mouse.get_pos()[1] - boxStartPos[1]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
+		screen.blit(frame, (DRAW_OFFSET + pygame.mouse.get_pos()[0] - boxStartPos[0], DRAW_OFFSET + pygame.mouse.get_pos()[1] - boxStartPos[1]))
+	else:
+		screen.blit(frame, (DRAW_OFFSET, DRAW_OFFSET))
+
+	# 회색 테두리 그리기
+	pygame.draw.rect(screen, GRAY, [0, 0, SCREEN_WIDTH, DRAW_OFFSET])
+	pygame.draw.rect(screen, GRAY, [0, SCREEN_HEIGHT - DRAW_OFFSET, SCREEN_WIDTH, DRAW_OFFSET])
+	pygame.draw.rect(screen, GRAY, [0, 0, DRAW_OFFSET, SCREEN_WIDTH])
+	pygame.draw.rect(screen, GRAY, [SCREEN_WIDTH - DRAW_OFFSET, 0, DRAW_OFFSET, SCREEN_HEIGHT])
 	# for y in range(n):
 	# 	for x in range(n):
 	# 		if mapImage[y][x]:
@@ -120,6 +131,10 @@ while run:
 	# 			drawY = SCREEN_HEIGHT - DRAW_OFFSET - y * ((SCREEN_HEIGHT - DRAW_OFFSET*2) / n)
 
 	# 			pygame.draw.rect(screen, WHITE, [drawX, drawY, ((SCREEN_WIDTH - DRAW_OFFSET*2) / n) + 1, ((SCREEN_HEIGHT - DRAW_OFFSET*2) / n) + 1])
+
+	# 프레임 그리기
+	screen.blit(myFont.render(f"{int(1/(time.time() - lastTime))} fps", True, (0, 0, 255)), (0, 0))
+	lastTime = time.time()
 
 	# 드래그 상자 그리기
 	if boxDragging:
@@ -185,14 +200,14 @@ while run:
 					# mapY += (pygame.mouse.get_pos()[0] - boxStartPos[0]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
 					# mapY += 
 
-					isDrawn, oneChunckLen = getResetedDraw(n, mapY, mapShowOffset, chunk)
+					isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
 			elif event.button == 2:
 				if moveDragging:
 					moveDragging = False
 					mapY -= 2*mapShowOffset*(pygame.mouse.get_pos()[0] - boxStartPos[0]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
 					mapX += 2*mapShowOffset*(pygame.mouse.get_pos()[1] - boxStartPos[1]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
 
-					isDrawn, oneChunckLen = getResetedDraw(n, mapY, mapShowOffset, chunk)
+					isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
 
 			elif event.button == 3:
 				# mapX = 0
@@ -201,7 +216,7 @@ while run:
 					mapShowOffset = mapShowOffset*2
 					# print("2배 축소")
 
-					isDrawn, oneChunckLen = getResetedDraw(n, mapY, mapShowOffset, chunk)
+					isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
 				# pass
 
 			if event.button != 1:
