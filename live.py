@@ -2,11 +2,9 @@
 max_iter = 500
 escape_radius = 1e+10
 
-# 시작 위치
-mapX = 0
-mapY = 0
-# 시작 좌우 길이
-mapShowOffset = 5e-1
+# (x, y, eps) = (-4.133439593177311, 0.00011276978589557028, 1.0351947055640964e-11)
+# (x, y, eps) = (-4.0861172452798415, 7.287713992363359e-12, 1.1148431096635038e-09)
+(x, y, eps) = (0, 0, 1)
 
 
 
@@ -16,6 +14,8 @@ from numba import njit, boolean
 import numpy as np
 import time
 
+
+# tmp = compute_tetration_divergence(mapX - mapShowOffset, y, mapX + mapShowOffset, y+oneChunckLen, n, int(n/chunk))
 # 그림 함수
 @njit
 def compute_tetration_divergence(x0, y0, x1, y1, width, height, max_iter = 500, escape_radius = 1e+10):
@@ -39,15 +39,15 @@ def compute_tetration_divergence(x0, y0, x1, y1, width, height, max_iter = 500, 
 	return divergence_map
 
 def getResetedDraw(n, mapY, offset, chunk):
-	cnt = int(n / chunk)
+	# cnt = int(n / chunk)
 	return ({
 			"drawAll" : False,
 			"map" : {
-				(mapY -offset + 2*offset/cnt*y, y) : False
-				for y in range(cnt)
+				(mapY -offset + 2*offset/chunk*y, y) : False
+				for y in range(chunk)
 			}
 		},
-			2*offset/(n/chunk),
+			2*offset/chunk,
 			np.zeros((n, n), dtype=bool)
 		)
 
@@ -57,10 +57,16 @@ pygame.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = (800, 800)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-n = 256
+MAP_RENDER_SIZE = 256
 chunk = 16
 
 # 변수 리셋
+# 시작 위치
+mapX = x
+mapY = y
+# 시작 좌우 길이
+mapShowOffset = eps
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 YELLOW = (255, 255, 0)
@@ -71,7 +77,7 @@ DRAW_COUNT_BY_A_FRAME = 5
 myFont = pygame.font.SysFont("malgungothic", 15)
 lastTime = time.time()
 
-isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
+isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
 # print(mapImage)
 
 # 그리기 변수
@@ -91,8 +97,8 @@ while run:
 				drawAll = False
 				y,mapdrawy=key
 				# tmp = compute_tetration_divergence(mapX - mapShowOffset, mapY - mapShowOffset, key[0]+oneChunckLen, key[1]+oneChunckLen, chunk, chunk)
-				tmp = compute_tetration_divergence(mapX - mapShowOffset, y, mapX + mapShowOffset, y+oneChunckLen, n, int(n/chunk))
-				length = int(n/chunk)
+				length = int(MAP_RENDER_SIZE/chunk)
+				tmp = compute_tetration_divergence(mapX - mapShowOffset, y, mapX + mapShowOffset, y+oneChunckLen, MAP_RENDER_SIZE, length)
 				mapImage[:,mapdrawy*length:(mapdrawy+1)*length] = tmp
 
 				isDrawn['map'][key] = True
@@ -134,6 +140,8 @@ while run:
 
 	# 프레임 그리기
 	screen.blit(myFont.render(f"{int(1/(time.time() - lastTime))} fps", True, (0, 0, 255)), (0, 0))
+	screen.blit(myFont.render(f"왼쪽 드래그 : 확대 / 휠 드래그 : 이동 / 우클릭 : 2배 축소 / ↑ : 화질 2배 / ↓ : 화질 0.5배", True, (0, 0, 255)), (100, 0))
+	screen.blit(myFont.render(f"x {mapX} / y {mapY} / eps {mapShowOffset} / Image {MAP_RENDER_SIZE} X {MAP_RENDER_SIZE}", True, (0, 0, 255)), (0, SCREEN_HEIGHT - DRAW_OFFSET))
 	lastTime = time.time()
 
 	# 드래그 상자 그리기
@@ -153,6 +161,15 @@ while run:
 			run = False
 			pygame.quit()
 			break
+
+		elif event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_UP:
+				MAP_RENDER_SIZE *= 2
+				isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
+			elif event.key == pygame.K_DOWN:
+				if MAP_RENDER_SIZE > 2:
+					MAP_RENDER_SIZE = int(MAP_RENDER_SIZE/2)
+					isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
 
 		elif event.type == pygame.MOUSEBUTTONDOWN:
 			if event.button == 1: #좌클
@@ -200,14 +217,14 @@ while run:
 					# mapY += (pygame.mouse.get_pos()[0] - boxStartPos[0]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
 					# mapY += 
 
-					isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
+					isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
 			elif event.button == 2:
 				if moveDragging:
 					moveDragging = False
 					mapY -= 2*mapShowOffset*(pygame.mouse.get_pos()[0] - boxStartPos[0]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
 					mapX += 2*mapShowOffset*(pygame.mouse.get_pos()[1] - boxStartPos[1]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
 
-					isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
+					isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
 
 			elif event.button == 3:
 				# mapX = 0
@@ -216,7 +233,7 @@ while run:
 					mapShowOffset = mapShowOffset*2
 					# print("2배 축소")
 
-					isDrawn, oneChunckLen, mapImage = getResetedDraw(n, mapY, mapShowOffset, chunk)
+					isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
 				# pass
 
 			if event.button != 1:
