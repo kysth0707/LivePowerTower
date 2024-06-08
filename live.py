@@ -15,31 +15,22 @@ import numpy as np
 import time
 
 
-# tmp = compute_tetration_divergence(mapX - mapShowOffset, y, mapX + mapShowOffset, y+oneChunckLen, n, int(n/chunk))
 # 그림 함수
 @njit
 def compute_tetration_divergence(x0, y0, x1, y1, width, height, max_iter = 500, escape_radius = 1e+10):
 	x = np.linspace(x0, x1, width)
 	y = np.linspace(y0, y1, height)
-	c = x[:, np.newaxis] + 1j * y[np.newaxis, :]
-
+	c = x[:, None] + 1j * y[None, :]
+	z = c
 	divergence_map = np.zeros((width, height), dtype=boolean)
-
-	for i in range(width):
-		for j in range(height):
-			c_val = c[i, j]
-			z = c_val
-
-			for k in range(max_iter):
-				z = c_val ** z
-				if np.abs(z) > escape_radius:
-					divergence_map[i, j] = True
-					break
+	for _ in range(max_iter):
+		powered = c ** z
+		z = powered
+		divergence_map |= (np.abs(z) > escape_radius)
 
 	return divergence_map
 
 def getResetedDraw(n, mapY, offset, chunk):
-	# cnt = int(n / chunk)
 	return ({
 			"drawAll" : False,
 			"map" : {
@@ -78,7 +69,6 @@ myFont = pygame.font.SysFont("malgungothic", 15)
 lastTime = time.time()
 
 isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
-# print(mapImage)
 
 # 그리기 변수
 boxStartPos = (0, 0)
@@ -90,13 +80,10 @@ while run:
 	# 맵 계산하기
 	if not isDrawn['drawAll']:
 		drawAll = True
-		# drawCnt = 0
 		for key, value in isDrawn['map'].items():
 			if not value:
-				# drawCnt += 1
 				drawAll = False
 				y,mapdrawy=key
-				# tmp = compute_tetration_divergence(mapX - mapShowOffset, mapY - mapShowOffset, key[0]+oneChunckLen, key[1]+oneChunckLen, chunk, chunk)
 				length = int(MAP_RENDER_SIZE/chunk)
 				tmp = compute_tetration_divergence(mapX - mapShowOffset, y, mapX + mapShowOffset, y+oneChunckLen, MAP_RENDER_SIZE, length)
 				mapImage[:,mapdrawy*length:(mapdrawy+1)*length] = tmp
@@ -113,14 +100,10 @@ while run:
 	screen.fill((0, 0, 0))
 
 	# 맵 그리기
-	# convert = mapImage.astype('int') * 256
-	# frame = pygame.surfarray.make_surface(np.rot90(mapImage.astype('int') * 255, 3))
 	tmp = Image.fromarray(np.rot90(mapImage.astype('int') * 255, 3)).resize((SCREEN_WIDTH - 2*DRAW_OFFSET, SCREEN_HEIGHT - 2*DRAW_OFFSET), resample=Image.Resampling.NEAREST)
 	frame = pygame.surfarray.make_surface(np.array(tmp))
 
 	if moveDragging:
-		# mapY -= 2*mapShowOffset*(pygame.mouse.get_pos()[0] - boxStartPos[0]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
-		# mapX += 2*mapShowOffset*(pygame.mouse.get_pos()[1] - boxStartPos[1]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
 		screen.blit(frame, (DRAW_OFFSET + pygame.mouse.get_pos()[0] - boxStartPos[0], DRAW_OFFSET + pygame.mouse.get_pos()[1] - boxStartPos[1]))
 	else:
 		screen.blit(frame, (DRAW_OFFSET, DRAW_OFFSET))
@@ -130,13 +113,6 @@ while run:
 	pygame.draw.rect(screen, GRAY, [0, SCREEN_HEIGHT - DRAW_OFFSET, SCREEN_WIDTH, DRAW_OFFSET])
 	pygame.draw.rect(screen, GRAY, [0, 0, DRAW_OFFSET, SCREEN_WIDTH])
 	pygame.draw.rect(screen, GRAY, [SCREEN_WIDTH - DRAW_OFFSET, 0, DRAW_OFFSET, SCREEN_HEIGHT])
-	# for y in range(n):
-	# 	for x in range(n):
-	# 		if mapImage[y][x]:
-	# 			drawX = DRAW_OFFSET + x * ((SCREEN_WIDTH - DRAW_OFFSET*2) / n)
-	# 			drawY = SCREEN_HEIGHT - DRAW_OFFSET - y * ((SCREEN_HEIGHT - DRAW_OFFSET*2) / n)
-
-	# 			pygame.draw.rect(screen, WHITE, [drawX, drawY, ((SCREEN_WIDTH - DRAW_OFFSET*2) / n) + 1, ((SCREEN_HEIGHT - DRAW_OFFSET*2) / n) + 1])
 
 	# 프레임 그리기
 	screen.blit(myFont.render(f"{int(1/(time.time() - lastTime))} fps", True, (0, 0, 255)), (0, 0))
@@ -179,7 +155,6 @@ while run:
 				boxStartPos = pygame.mouse.get_pos()
 				moveDragging = True
 			elif event.button == 3:
-				# print("우클")
 				pass
 		elif event.type == pygame.MOUSEBUTTONUP:
 			if event.button == 1: #좌클
@@ -199,23 +174,16 @@ while run:
 					y0=(SCREEN_HEIGHT - y0)
 					x1-=DRAW_OFFSET
 					y1=(SCREEN_HEIGHT - y1)
-					# mapX -offset + 2*offset/cnt*x
 					
 					x0 = mapY - mapShowOffset + 2*mapShowOffset*x0/(SCREEN_WIDTH-2*DRAW_OFFSET)
 					x1 = mapY - mapShowOffset + 2*mapShowOffset*x1/(SCREEN_WIDTH-2*DRAW_OFFSET)
 					y0 = mapX - mapShowOffset + 2*mapShowOffset*y0/(SCREEN_WIDTH-2*DRAW_OFFSET)
 					y1 = mapX - mapShowOffset + 2*mapShowOffset*y1/(SCREEN_WIDTH-2*DRAW_OFFSET)
-					# print((x0, y0), (x1, y1))
 
 					mapShowOffset = x1 - x0
 
 					mapY = (x0+x1)/2
 					mapX = (y0+y1)/2
-
-					# 레전드 뻘짓 mapX랑 mapY랑 반대임
-
-					# mapY += (pygame.mouse.get_pos()[0] - boxStartPos[0]) / (SCREEN_WIDTH -2*DRAW_OFFSET)
-					# mapY += 
 
 					isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
 			elif event.button == 2:
@@ -227,14 +195,10 @@ while run:
 					isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
 
 			elif event.button == 3:
-				# mapX = 0
-				# mapY = 0
 				if not boxDragging and not moveDragging:
 					mapShowOffset = mapShowOffset*2
-					# print("2배 축소")
-
+					
 					isDrawn, oneChunckLen, mapImage = getResetedDraw(MAP_RENDER_SIZE, mapY, mapShowOffset, chunk)
-				# pass
 
 			if event.button != 1:
 				boxDragging = False
