@@ -13,7 +13,8 @@
 # (x, y, eps) = (-4.133439593177311, 0.00011276978589557028, 1.0351947055640964e-11)
 # (x, y, eps) = (-4.13343959315193, 0.00011276980316066802, 2.0068439409728044e-11)
 # (x, y, eps) = (-4.086116071588547, 9.38070759198438e-10, 1.2490200196995116e-07)
-(x, y, eps) = (-4.0861172452798415, 7.287713992363359e-12, 1.1148431096635038e-09)
+# (x, y, eps) = (-4.0861172452798415, 7.287713992363359e-12, 1.1148431096635038e-09)
+(x, y, eps) = (0, 0, 4)
 
 
 import numpy as np
@@ -21,13 +22,13 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from numba import njit, boolean
 
-n = 500
+n = 1024
 x0 = x
 y0 = y
 
 
 #parameters - tetration계산 관련
-max_iter = 500 #최대 몇층까지 계산할 것인지를 정함. max_iter층 만큼 계산했는데 복소수 크기가 escape_radius를 벗어나지 않으면 수렴한것으로 처리.
+max_iter = 200 #최대 몇층까지 계산할 것인지를 정함. max_iter층 만큼 계산했는데 복소수 크기가 escape_radius를 벗어나지 않으면 수렴한것으로 처리.
 escape_radius = 1e+10 #복소수크기가 escape_radius를 벗어나면 발산한 것으로 처리함.
 
 @njit

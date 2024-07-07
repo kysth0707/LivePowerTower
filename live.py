@@ -138,6 +138,7 @@ while run:
 		else:
 			pygame.draw.rect(screen, YELLOW, [boxStartPos[0]+size, boxStartPos[1]+size, -size, -size], 2)
 	
+	# 부분 렌더 박스
 	if partRenderDragging:
 		mPos = pygame.mouse.get_pos()
 		startX = int((partRenderStartPos[0] - DRAW_OFFSET) / ((SCREEN_WIDTH - 2*DRAW_OFFSET) / chunk))
@@ -147,6 +148,11 @@ while run:
 
 		pygame.draw.rect(screen, YELLOW, [int(startX * (SCREEN_WIDTH - 2*DRAW_OFFSET) / chunk) + DRAW_OFFSET, DRAW_OFFSET, int((endX - startX + 1) * (SCREEN_WIDTH - 2*DRAW_OFFSET) / chunk), SCREEN_HEIGHT - 2*DRAW_OFFSET], 5)
 
+	# 현재 마우스 기반한 그림의 좌표
+	mPos = pygame.mouse.get_pos()
+	mouseY = mapY + (mPos[0]-DRAW_OFFSET-SCREEN_WIDTH/2)/(SCREEN_WIDTH-DRAW_OFFSET*2)*mapShowOffset*2
+	mouseX = mapX - (mPos[1]-DRAW_OFFSET-SCREEN_HEIGHT/2)/(SCREEN_HEIGHT-DRAW_OFFSET*2)*mapShowOffset*2
+	screen.blit(myFont.render(f"({mouseX}, {mouseY})", True, (0, 255, 0)), (mPos[0]+10,mPos[1]-15))
 
 	pygame.display.update()
 
